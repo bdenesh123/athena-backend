@@ -10,10 +10,13 @@ const app = express();
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
+    origin: [
+      "http://localhost:5173", // local dev
+      "https://athena-ai-project.vercel.app", // production frontend
+    ],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 app.use(bodyParser.json());
