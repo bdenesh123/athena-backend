@@ -26,10 +26,8 @@ app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
   try {
-    // Call the generative text endpoint
     const response = await client.responses.create({
       model: "models/gemini-2.5-flash",
-      // You can add more parameters like temperature, maxOutputTokens, etc.
       input: [
         {
           role: "user",
@@ -37,8 +35,6 @@ app.post("/chat", async (req, res) => {
         },
       ],
     });
-
-    // The text reply is usually in response.output_text
     res.json({
       reply: response.output_text || "No reply from Gemini.",
     });
