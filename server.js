@@ -1,13 +1,15 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+// server.js
+import express from "express";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 
+// Allow your frontend URLs
 app.use(
   cors({
     origin: [
@@ -19,40 +21,61 @@ app.use(
   })
 );
 
-app.use(bodyParser.json());
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-//  Gemini setup
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Helper: get available models from Google Gemini
+const getAvailableModel = async () => {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`
+    );
+    const data = await res.json();
 
-async function listModels() {
-  const models = await genAI.listModels();
-  models.forEach((m) => console.log(m.name));
-}
+    // Pick the first model that supports generateContent
+    const model = data.models?.find((m) =>
+      m.supportedGenerationMethods?.includes("generateContent")
+    );
 
-listModels();
+    if (!model) throw new Error("No valid model found for generateContent");
 
-// Chat endpoint (Gemini)
+    return model.name; // e.g., "models/gemini-1.5-pro"
+  } catch (err) {
+    console.error("Error fetching models:", err);
+    throw err;
+  }
+};
+
+// Chat endpoint
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "models/gemini-1.5-flash",
-    });
+    const modelName = await getAvailableModel();
 
-    const prompt = `You are a helpful AI assistant. Answer clearly and politely. 
-    User said: "${message}"`;
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: message }] }],
+        }),
+      }
+    );
 
-    const result = await model.generateContent(prompt);
+    const data = await response.json();
+    console.log("Gemini response:", JSON.stringify(data, null, 2));
 
-    res.json({ reply: result.response.text() });
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No reply from Gemini.";
+
+    res.json({ reply });
   } catch (err) {
-    console.error("Gemini API error details:", err);
-    res.status(500).json({ error: err.message || "Error talking to Gemini" });
+    console.error("Error in /chat:", err);
+    res.status(500).json({ reply: "Error contacting Gemini API" });
   }
 });
 
-const PORT = 8000;
-app.listen(PORT, () =>
-  console.log(`✅ Server running on http://localhost:${PORT}`)
-);
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
