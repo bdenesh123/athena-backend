@@ -22,7 +22,6 @@ app.use(
 app.use(bodyParser.json());
 
 //  Gemini setup
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Chat endpoint (Gemini)
@@ -32,14 +31,10 @@ app.post("/chat", async (req, res) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const chat = model.startChat({
-      history: [
-        { role: "user", parts: [{ text: "Hello" }] },
-        { role: "model", parts: [{ text: "Hi there! How can I help?" }] },
-      ],
-    });
+    const prompt = `You are a helpful AI assistant. Answer clearly and politely. 
+    User said: "${message}"`;
 
-    const result = await chat.sendMessage(message);
+    const result = await model.generateContent(prompt);
 
     res.json({ reply: result.response.text() });
   } catch (err) {
