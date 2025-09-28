@@ -27,7 +27,7 @@ app.post("/chat", async (req, res) => {
   try {
     // Pick a valid model from your available list
     const model = genAI.getGenerativeModel({
-      model: "models/gemini-2.5-flash",
+      model: "models/gemini-1.5-flash",
     });
 
     const prompt = `You are a helpful AI assistant. Answer clearly and politely.
