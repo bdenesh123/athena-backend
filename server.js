@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
@@ -9,35 +8,39 @@ dotenv.config();
 
 const app = express();
 
-const corsOptions = {
-  origin: "https://athena-ai-project.vercel.app",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: "https://athena-ai-project.vercel.app",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(bodyParser.json());
 
-const genAI = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+const client = new GoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
   try {
-    // Pick a valid model from your available list
-    const model = genAI.getGenerativeModel({
-      model: "models/gemini-1.5-flash",
+    // Call the generative text endpoint
+    const response = await client.responses.create({
+      model: "models/gemini-2.5-flash",
+      // You can add more parameters like temperature, maxOutputTokens, etc.
+      input: [
+        {
+          role: "user",
+          content: message,
+        },
+      ],
     });
 
-    const prompt = `You are a helpful AI assistant. Answer clearly and politely.
-User said: "${message}"`;
-
-    const result = await model.generateText({ prompt });
-
+    // The text reply is usually in response.output_text
     res.json({
-      reply: result?.candidates?.[0]?.output || "No reply from Gemini.",
+      reply: response.output_text || "No reply from Gemini.",
     });
   } catch (err) {
     console.error("Gemini API error details:", err);
@@ -45,7 +48,5 @@ User said: "${message}"`;
   }
 });
 
-const PORT = 8000;
-app.listen(PORT, () =>
-  console.log(`✅ Server running on http://localhost:${PORT}`)
-);
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
