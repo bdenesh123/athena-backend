@@ -32,9 +32,14 @@ app.post("/chat", async (req, res) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent([
-      { role: "user", parts: [{ text: message }] },
-    ]);
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: "Hello" }] },
+        { role: "model", parts: [{ text: "Hi there! How can I help?" }] },
+      ],
+    });
+
+    const result = await chat.sendMessage(message);
 
     res.json({ reply: result.response.text() });
   } catch (err) {
