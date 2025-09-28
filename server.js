@@ -24,6 +24,13 @@ app.use(bodyParser.json());
 //  Gemini setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+async function listModels() {
+  const models = await genAI.listModels();
+  models.forEach((m) => console.log(m.name));
+}
+
+listModels();
+
 // Chat endpoint (Gemini)
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
