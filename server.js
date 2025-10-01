@@ -26,17 +26,12 @@ app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
   try {
-    const response = await client.responses.create({
-      model: "models/gemini-2.5-flash",
-      input: [
-        {
-          role: "user",
-          content: message,
-        },
-      ],
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent(message);
+
     res.json({
-      reply: response.output_text || "No reply from Gemini.",
+      reply: result.response.text() || "No reply from Gemini.",
     });
   } catch (err) {
     console.error("Gemini API error details:", err);
