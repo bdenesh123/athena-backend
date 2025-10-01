@@ -28,7 +28,16 @@ app.post("/chat", async (req, res) => {
       model: "models/gemini-2.5-pro",
     });
 
-    const result = await model.generateContent(message);
+    const systemPrompt = `
+      You are Athena, a helpful AI assistant.
+      Always respond in a polite, friendly, and professional manner.
+      Be concise but helpful.
+    `;
+
+    const result = await model.generateContent([
+      { role: "user", parts: [{ text: systemPrompt }] },
+      { role: "user", parts: [{ text: message }] },
+    ]);
 
     res.json({
       reply: result.response.text() || "No reply from Gemini.",
